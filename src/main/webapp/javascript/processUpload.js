@@ -67,7 +67,11 @@ async function processCV() {
                 if (role && employer) {
                     div.innerHTML = `<strong>${role}</strong> at <em>${employer}</em><br/>${dates}`;
                 } else if (role) {
-                    div.innerHTML = `<strong>${role}</strong><br/>${description}`;
+                const colonIdx = description.indexOf(':');
+                const descBody = colonIdx > 0 ? description.substring(colonIdx + 1).trim() : '';
+                div.innerHTML = descBody
+                    ? `<strong>${role}</strong><br/>${descBody}`
+                    : `<strong>${role}</strong>`;
                 } else {
                     div.innerHTML = description;
                 }

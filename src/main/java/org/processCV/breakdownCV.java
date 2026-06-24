@@ -30,18 +30,20 @@ public class breakdownCV {
     private static final Logger log = Logger.getLogger(breakdownCV.class.getName());
 
     private static final Pattern EMAIL_PATTERN = Pattern.compile("\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Z|a-z]{2,}\\b");
-    private static final Pattern PHONE_PATTERN = Pattern.compile("(?:\\+?\\d{1,3}[-.\\s]?)?\\d{3}[-.\\s]?\\d{3}[-.\\s]?\\d{4}");
-    private static final Pattern PERSONAL_INFO_PATTERN = Pattern.compile("(?i)(?:name|email|phone|address|contact|mobile)\\s*:?\\s*([^\\n]+)");
+    private static final Pattern PHONE_PATTERN = Pattern.compile("(?:\\+?\\d{1,3}[-.\\s]?)?(?:\\d[-.\\s]?){8,12}\\d");
+    private static final Pattern PERSONAL_INFO_PATTERN = Pattern.compile("(?im)^[ \\t]*(?:name|email|phone|address|contact|mobile)[ \\t]*:[ \\t]*([^\\n]+)");
     private static final Pattern DATE_RANGE_PATTERN2 = Pattern.compile(
-        "(?i)(\\d{4}-\\d{2}-\\d{2}|(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\\s*\\d{0,4}|\\d{4}|present|currently)\\s*[-–—]\\s*(\\d{4}-\\d{2}-\\d{2}|(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\\s*\\d{0,4}|\\d{4}|present|currently)"
-    );
-
+        "(?i)(\\d{4}-\\d{2}-\\d{2}|(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\\s*\\d{0,4}|\\d{4}|present|currently)\\s*[-–—]\\s*(\\d{4}-\\d{2}-\\d{2}|(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\\s*\\d{0,4}|\\d{4}|present|currently)");
+    private static final Pattern DATE_RANGE_PATTERN3 = Pattern.compile(
+        "(?i)(?:from\\s+)?((jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\\s+\\d{4}|\\d{4})\\s+to\\s+((jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\\s+\\d{4}|\\d{4}|present|currently)");
+    private static final Pattern EMBEDDED_DATE_PATTERN = Pattern.compile(
+        "(?i)(?:in|by|since|expected|finish|complete[sd]?)\\s+(?:in\\s+)?((jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\\s+\\d{4})");
     private static final String[] SUMMARY_HEADERS = {"summary", "profile", "professional summary", "personal profile", "about me", "objective"};
     private static final String[] EDUCATION_HEADERS = {"education", "educational background", "academic qualifications", "academic background", "qualifications"};
     private static final String[] EXPERIENCE_HEADERS = {
         "experience", "work experience", "employment history", "professional experience",
         "career history", "work history", "employment", "professional background",
-        "practical experience", "certifications", "practical experience & certifications"
+        "practical experience", "practical cybersecurity experience", "certifications", "practical experience & certifications"
     };
     private static final String[] SKILLS_HEADERS = {"skills", "technical skills", "core competencies", "key skills", "professional skills"};
     private static final String[] REFERENCES_HEADERS = {"references", "referees", "professional references"};
@@ -257,6 +259,21 @@ public class breakdownCV {
                 System.out.println("    -> date: " + rawdate);
                 continue;
             }
+            // "to"-separated range: "From September 2017 to September 2022"
+            // Also handles lines like "High school (...). From Jan 2015 to Dec 2020"
+            Matcher dm3 = DATE_RANGE_PATTERN3.matcher(lower);
+            if (dm3.find() && rawdate.isEmpty()) {
+                rawdate = dm3.group(1).trim() + " - " + dm3.group(3).trim();
+                // If the portion before the date contains a degree term, also save as certificate
+                String beforeDate = line.substring(0, dm3.start()).trim().replaceAll("[.,\\s]+$", "");
+                if (certificate.isEmpty() && !beforeDate.isEmpty()
+                        && containsAny(beforeDate.toLowerCase(), DEGREE_TERMS)) {
+                    certificate = beforeDate;
+                    System.out.println("    -> cert from to-range line: " + certificate);
+                }
+                System.out.println("    -> date (to-range): " + rawdate);
+                continue;
+            }
 
             // Degree/certificate detection
             // Handle combined lines like "UNIVERSITY NAME - Degree in X"
@@ -273,6 +290,15 @@ public class breakdownCV {
                 }
                 if (certificate.isEmpty()) {
                     certificate = line;
+                    // Also extract an embedded single date from the same line
+                    // e.g. "BSc Computer Science. Expected finish in November 2027."
+                    if (rawdate.isEmpty()) {
+                        Matcher dem = EMBEDDED_DATE_PATTERN.matcher(lower);
+                        if (dem.find()) {
+                            rawdate = " - " + dem.group(1).trim();
+                            System.out.println("    -> date (embedded in cert): " + rawdate);
+                        }
+                    }
                     System.out.println("    -> certificate: " + certificate);
                     continue;
                 }
@@ -315,8 +341,24 @@ public class breakdownCV {
             }
         }
 
-        System.out.println("Education entries parsed: " + result.length());
-        return result;
+        // Deduplication pass: if two institutions share the same 10-char prefix,
+        // keep only the longer (more complete) one
+        JSONArray deduped = new JSONArray();
+        for (int i = 0; i < result.length(); i++) {
+            String inst = result.getJSONObject(i).optString("institution", "");
+            String prefix = inst.substring(0, Math.min(10, inst.length()));
+            boolean superseded = false;
+            for (int j = 0; j < result.length(); j++) {
+                if (i == j) continue;
+                String other = result.getJSONObject(j).optString("institution", "");
+                if (other.startsWith(prefix) && other.length() > inst.length()) {
+                    superseded = true; break;
+                }
+            }
+            if (!superseded) deduped.put(result.getJSONObject(i));
+        }
+        System.out.println("Education entries parsed: " + deduped.length());
+        return deduped;
     }
 
     private JSONObject buildEducationEntry(String institute, String certificate, String rawdate) {
@@ -537,10 +579,7 @@ public class breakdownCV {
             Matcher m = EMAIL_PATTERN.matcher(plainText);
             if (m.find()) personalInfo.put("email", m.group(0));
         }
-        Matcher pm = PHONE_PATTERN.matcher(plainText);
-        if (pm.find()) personalInfo.put("phone", pm.group(0));
-
-        // Step 4: Labeled fields
+        // Step 4: Labeled fields (runs before phone regex — labeled "Phone: x" is more reliable)
         Matcher lm = PERSONAL_INFO_PATTERN.matcher(plainText);
         while (lm.find()) {
             String infoLine = lm.group(0).toLowerCase();
@@ -549,6 +588,13 @@ public class breakdownCV {
             else if (infoLine.contains("name") && !personalInfo.has("name")) personalInfo.put("name", value);
             else if ((infoLine.contains("phone") || infoLine.contains("mobile")) && !personalInfo.has("phone")) personalInfo.put("phone", value);
             else if (infoLine.contains("email") && !personalInfo.has("email")) personalInfo.put("email", value);
+        }
+
+        // Phone regex fallback — only if labeled-field scan didn't find a phone,
+        // and limited to first 500 chars where phone numbers realistically appear
+        if (!personalInfo.has("phone")) {
+            Matcher pm = PHONE_PATTERN.matcher(plainText.substring(0, Math.min(500, plainText.length())));
+            if (pm.find()) personalInfo.put("phone", pm.group(0));
         }
 
         result.put("personal_info", personalInfo);
@@ -562,7 +608,7 @@ public class breakdownCV {
 
     private String parseDateFlexible(String dateStr) {
         DateTimeFormatter outputFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        String trimmed = dateStr.trim();
+        String trimmed = dateStr.trim().replaceAll("\\s+", " ");
         if (trimmed.equalsIgnoreCase("present") || trimmed.equalsIgnoreCase("ongoing") || trimmed.equalsIgnoreCase("current"))
             return LocalDate.now().format(outputFormat);
         for (String pattern : fullDateFormats) {
