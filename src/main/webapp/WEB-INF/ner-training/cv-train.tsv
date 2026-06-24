@@ -5659,3 +5659,235 @@ School	I-DEGREE
 Certificate	I-DEGREE
 .	O
 
+Nairobi	B-LOCATION
+,	O
+Kenya	B-LOCATION
+
+Mombasa	B-LOCATION
+,	O
+Kenya	B-LOCATION
+
+Kisumu	B-LOCATION
+,	O
+Kenya	B-LOCATION
+
+Nakuru	B-LOCATION
+,	O
+Kenya	B-LOCATION
+
+Karen	B-LOCATION
+,	O
+Nairobi	B-LOCATION
+
+Westlands	B-LOCATION
+,	O
+Nairobi	B-LOCATION
+
+Dar	B-LOCATION
+es	I-LOCATION
+Salaam	I-LOCATION
+,	O
+Tanzania	B-LOCATION
+
+Kampala	B-LOCATION
+,	O
+Uganda	B-LOCATION
+
+Kigali	B-LOCATION
+,	O
+Rwanda	B-LOCATION
+
+Eldoret	B-LOCATION
+,	O
+Kenya	B-LOCATION
+
+Grace	B-PERSON
+Achieng	I-PERSON
+is	O
+based	O
+in	O
+Nairobi	B-LOCATION
+,	O
+Kenya	B-LOCATION
+.	O
+
+Brian	B-PERSON
+Koech	I-PERSON
+resides	O
+in	O
+Nakuru	B-LOCATION
+,	O
+Kenya	B-LOCATION
+.	O
+
+She	O
+relocated	O
+from	O
+Mombasa	B-LOCATION
+to	O
+Nairobi	B-LOCATION
+for	O
+work	O
+.	O
+
+Software	O
+Engineer	O
+at	O
+Safaricom	B-COMPANY
+.	O
+
+Analyst	O
+at	O
+KCB	B-COMPANY
+Bank	I-COMPANY
+Kenya	I-COMPANY
+.	O
+
+Developer	O
+Intern	O
+at	O
+Andela	B-COMPANY
+.	O
+
+He	O
+works	O
+at	O
+Equity	B-COMPANY
+Bank	I-COMPANY
+.	O
+
+Engineer	O
+at	O
+Kenya	B-COMPANY
+Power	I-COMPANY
+.	O
+
+Consultant	O
+at	O
+Deloitte	B-COMPANY
+East	I-COMPANY
+Africa	I-COMPANY
+.	O
+
+She	O
+joined	O
+PwC	B-COMPANY
+Kenya	I-COMPANY
+as	O
+a	O
+junior	O
+associate	O
+.	O
+
+Developer	O
+at	O
+Twiga	B-COMPANY
+Foods	I-COMPANY
+.	O
+
+Engineer	O
+at	O
+M-KOPA	B-COMPANY
+Solar	I-COMPANY
+.	O
+
+Manager	O
+at	O
+Jubilee	B-COMPANY
+Insurance	I-COMPANY
+.	O
+
+Intern	O
+at	O
+Nation	B-COMPANY
+Media	I-COMPANY
+Group	I-COMPANY
+.	O
+
+He	O
+previously	O
+worked	O
+at	O
+Safaricom	B-COMPANY
+and	O
+then	O
+joined	O
+Cellulant	B-COMPANY
+.	O
+
+Google	B-CERTIFICATION
+Cybersecurity	I-CERTIFICATION
+Professional	I-CERTIFICATION
+Certificate	I-CERTIFICATION
+
+AWS	B-CERTIFICATION
+Certified	I-CERTIFICATION
+Solutions	I-CERTIFICATION
+Architect	I-CERTIFICATION
+
+CompTIA	B-CERTIFICATION
+Security	I-CERTIFICATION
++	I-CERTIFICATION
+
+Cisco	B-CERTIFICATION
+CCNA	I-CERTIFICATION
+Certification	I-CERTIFICATION
+
+Microsoft	B-CERTIFICATION
+Azure	I-CERTIFICATION
+Fundamentals	I-CERTIFICATION
+AZ-900	I-CERTIFICATION
+
+TryHackMe	B-CERTIFICATION
+Pre-Security	I-CERTIFICATION
+Certificate	I-CERTIFICATION
+
+Certified	B-CERTIFICATION
+Ethical	I-CERTIFICATION
+Hacker	I-CERTIFICATION
+(	I-CERTIFICATION
+CEH	I-CERTIFICATION
+)	O
+
+ISACA	B-CERTIFICATION
+CISM	I-CERTIFICATION
+Certification	I-CERTIFICATION
+
+Google	B-CERTIFICATION
+Project	I-CERTIFICATION
+Management	I-CERTIFICATION
+Certificate	I-CERTIFICATION
+
+She	O
+completed	O
+the	O
+Google	B-CERTIFICATION
+Cybersecurity	I-CERTIFICATION
+Professional	I-CERTIFICATION
+Certificate	I-CERTIFICATION
+in	O
+2024	O
+.	O
+
+He	O
+holds	O
+a	O
+CompTIA	B-CERTIFICATION
+Security+	I-CERTIFICATION
+and	O
+a	O
+Cisco	B-CERTIFICATION
+CCNA	I-CERTIFICATION
+.	O
+
+Awarded	O
+the	O
+AWS	B-CERTIFICATION
+Certified	I-CERTIFICATION
+Solutions	I-CERTIFICATION
+Architect	I-CERTIFICATION
+certification	O
+in	O
+April	O
+2025	O
+.	O

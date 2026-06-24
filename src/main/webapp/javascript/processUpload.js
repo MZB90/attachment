@@ -35,6 +35,10 @@ async function processCV() {
         document.getElementById('infoName').textContent = info.name || '—';
         document.getElementById('infoEmail').textContent = info.email || '—';
         document.getElementById('infoPhone').textContent = info.phone || '—';
+        if (document.getElementById('infoLocation'))
+            document.getElementById('infoLocation').textContent = info.location || '—';
+        if (document.getElementById('infoCompany'))
+            document.getElementById('infoCompany').textContent = info.current_company || '—';
 
         // Education
         const eduSection = document.getElementById('educationContent');

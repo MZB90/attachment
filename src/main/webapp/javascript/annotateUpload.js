@@ -4,17 +4,32 @@ let selection = { seg: null, anchor: null, focus: null };
 let hasExportedThisLoad = false;
 
 const LABEL_KEYS = {
-    'p': 'B-PERSON',   'P': 'I-PERSON',
-    'j': 'B-JOB_TITLE','J': 'I-JOB_TITLE',
-    'd': 'B-DEGREE',   'D': 'I-DEGREE',
-    'g': 'B-ORGANIZATION','G': 'I-ORGANIZATION',
+    'p': 'B-PERSON',        'P': 'I-PERSON',
+    'j': 'B-JOB_TITLE',     'J': 'I-JOB_TITLE',
+    'd': 'B-DEGREE',        'D': 'I-DEGREE',
+    'g': 'B-ORGANIZATION',  'G': 'I-ORGANIZATION',
+    'l': 'B-LOCATION',      'L': 'I-LOCATION',
+    'c': 'B-COMPANY',       'C': 'I-COMPANY',
+    'r': 'B-CERTIFICATION', 'R': 'I-CERTIFICATION',
     'x': 'O'
 };
 const ENTITY_COLORS = {
-    PERSON: '#bfdbfe', JOB_TITLE: '#bbf7d0', DEGREE: '#ddd6fe', ORGANIZATION: '#fed7aa'
+    PERSON:        '#bfdbfe',
+    JOB_TITLE:     '#bbf7d0',
+    DEGREE:        '#ddd6fe',
+    ORGANIZATION:  '#fed7aa',
+    LOCATION:      '#fde68a',
+    COMPANY:       '#d1fae5',
+    CERTIFICATION: '#fce7f3'
 };
 const ENTITY_DISPLAY = {
-    PERSON: 'Person', JOB_TITLE: 'Job Title', DEGREE: 'Degree', ORGANIZATION: 'Organization'
+    PERSON:        'Person',
+    JOB_TITLE:     'Job Title',
+    DEGREE:        'Degree',
+    ORGANIZATION:  'Organization',
+    LOCATION:      'Location',
+    COMPANY:       'Company',
+    CERTIFICATION: 'Certification'
 };
 const TIGHT_BEFORE = /^[.,;:!?)\]}%"''"-]$/;
 const TIGHT_AFTER  = /^[(\[{"']$/;
@@ -36,7 +51,7 @@ function updateSummary() {
             const bi     = label.split('-')[0];
             const entity = label.split('-')[1];
             if (bi === 'B') {
-                lines.push('<div class="sum-line"><span class="sum-tok">' + tok + '</span><span class="sum-tag sum-b">B</span><span class="sum-entity">' + ENTITY_DISPLAY[entity] + '</span></div>');
+                lines.push('<div class="sum-line"><span class="sum-tok">' + tok + '</span><span class="sum-tag sum-b">B</span><span class="sum-entity">' + (ENTITY_DISPLAY[entity] || entity) + '</span></div>');
             } else {
                 lines.push('<div class="sum-line"><span class="sum-tok">' + tok + '</span><span class="sum-tag sum-i">I</span></div>');
             }
@@ -108,7 +123,7 @@ function renderSegments() {
             chip.className = 'tok';
             chip.textContent = tok;
             const label = currentLabels[segIdx][tokIdx];
-            chip.style.background = isSelected(segIdx, tokIdx) ? '#fde68a' : getColor(label);
+            chip.style.background = isSelected(segIdx, tokIdx) ? '#a5b4fc' : getColor(label);
             chip.style.outline    = label && label !== 'O' ? '1px solid rgba(0,0,0,.15)' : '';
             chip.addEventListener('click', (e) => handleChipClick(segIdx, tokIdx, e.shiftKey, e.pageX, e.pageY));
             row.appendChild(chip);
@@ -137,7 +152,9 @@ function handleChipClick(segIdx, tokIdx, shiftKey, x, y) {
 
 function showLabelMenu(x, y) {
     const menu = document.getElementById('labelMenu');
-    menu.style.left    = x + 'px';
+    const menuWidth = 260;
+    const left = Math.min(x, window.innerWidth - menuWidth - 8);
+    menu.style.left    = left + 'px';
     menu.style.top     = y + 'px';
     menu.style.display = 'block';
 }
@@ -181,10 +198,6 @@ document.addEventListener('keydown', (e) => {
     applyLabel(LABEL_KEYS[key]);
 });
 
-
-
-
-
 function clearAll() {
     if (currentSegments.length === 0) return;
     if (!confirm('Clear all annotations?')) return;
@@ -194,26 +207,12 @@ function clearAll() {
     updateSummary();
 }
 
-
-
-
-
-
-
 async function exportAnnotations() {
     if (currentSegments.length === 0) {
         document.getElementById('annotateStatus').textContent = 'Load a CV first.';
         return;
     }
 
-    //const labeledSegments = currentSegments
-        //.map((seg, segIdx) => ({ tokens: seg.tokens, labels: currentLabels[segIdx] }))
-        //.filter(seg => seg.labels.some(l => l !== 'O'));
-
-
-
-    // Extract contiguous non-O spans as independent segments.
-    // Avoids writing unreviewed O tokens that might actually be entities.
     const labeledSegments = [];
     currentSegments.forEach((seg, segIdx) => {
         const labels = currentLabels[segIdx];
@@ -231,30 +230,13 @@ async function exportAnnotations() {
         }
     });
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     if (labeledSegments.length === 0) {
         document.getElementById('annotateStatus').textContent = 'No labeled tokens. Label at least one token first.';
         return;
     }
 
     const totalLabeled = labeledSegments.reduce((n, s) => n + s.labels.filter(l => l !== 'O').length, 0);
-    let msg = 'Export ' + labeledSegments.length + ' labeled lines / ' + totalLabeled + ' entity tokens?';
+    let msg = 'Export ' + labeledSegments.length + ' labeled spans / ' + totalLabeled + ' entity tokens?';
     if (hasExportedThisLoad) msg = 'Already exported once — will ADD A DUPLICATE. ' + msg;
     if (!confirm(msg)) return;
 

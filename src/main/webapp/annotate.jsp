@@ -10,7 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="<%= request.getContextPath() %>/css/style.css">
-    <script src="<%=request.getContextPath()%>/javascript/annotateUpload.js?6" defer></script>
+    <script src="<%=request.getContextPath()%>/javascript/annotateUpload.js?7" defer></script>
     <style>
         body { display: flex; flex-direction: column; min-height: 100vh; }
         main { flex: 1; }
@@ -38,7 +38,7 @@
         #labelMenu {
             position: absolute; display: none;
             background: white; border: 1px solid #d1d5db; border-radius: 8px;
-            box-shadow: 0 4px 16px rgba(0,0,0,.12); padding: 6px; z-index: 50; min-width: 220px;
+            box-shadow: 0 4px 16px rgba(0,0,0,.12); padding: 6px; z-index: 50; min-width: 260px;
         }
         .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; }
         #labelMenu button {
@@ -51,6 +51,9 @@
         .btn-degree { background:#ddd6fe; color:#2e1065; }
         .btn-org    { background:#fed7aa; color:#7c2d12; }
         .btn-clear  { background:#f3f4f6; color:#374151; grid-column: 1/-1; }
+        .btn-loc  { background:#fde68a; color:#78350f; }
+        .btn-co   { background:#d1fae5; color:#064e3b; }
+        .btn-cert { background:#fce7f3; color:#831843; }
         .menu-label { font-size: 11px; color:#6b7280; padding: 2px 4px 4px; text-transform:uppercase; letter-spacing:.05em; }
 
         /* Summary panel */
@@ -96,7 +99,7 @@
 
                 <p class="hint">
                     Click a token to select; shift-click to extend within the same line, then pick a label from the menu.<br>
-                    Keys: <b>p</b>=B-PERSON &nbsp;<b>P</b>=I-PERSON &nbsp;<b>j</b>=B-JOB_TITLE &nbsp;<b>J</b>=I-JOB_TITLE &nbsp;<b>d</b>=B-DEGREE &nbsp;<b>D</b>=I-DEGREE &nbsp;<b>g</b>=B-ORG &nbsp;<b>G</b>=I-ORG &nbsp;<b>x</b>=Clear &nbsp;Esc=cancel
+                    Keys: <b>p</b>=B-PERSON &nbsp;<b>P</b>=I &nbsp;<b>j</b>=B-JOB_TITLE &nbsp;<b>J</b>=I &nbsp;<b>d</b>=B-DEGREE &nbsp;<b>D</b>=I &nbsp;<b>g</b>=B-ORG &nbsp;<b>G</b>=I &nbsp;<b>l</b>=B-LOCATION &nbsp;<b>L</b>=I &nbsp;<b>c</b>=B-COMPANY &nbsp;<b>C</b>=I &nbsp;<b>r</b>=B-CERT &nbsp;<b>R</b>=I &nbsp;<b>x</b>=Clear &nbsp;Esc=cancel
                 </p>
 
                 <div id="annotateContainer"></div>
@@ -111,20 +114,11 @@
                     Export to Training Set
                 </button>
 
-
-
                 <button type="button" onclick="clearAll()"
                         class="w-full mt-2 px-5 py-2 rounded-lg font-semibold text-sm
                                border border-red-200 text-red-600 hover:bg-red-50 transition">
                     Clear All
                 </button>
-
-
-
-
-
-
-
 
                 <div id="annotationSummary">
                     <p class="sum-empty">No annotations yet.</p>
@@ -134,7 +128,6 @@
 
         </div><!-- end workspace -->
 
-        <!-- Floating label menu (position:absolute, sits above everything) -->
         <div id="labelMenu">
             <div class="menu-label">Begin (B)</div>
             <div class="menu-grid">
@@ -142,6 +135,9 @@
                 <button class="btn-job"    data-label="B-JOB_TITLE">Job Title B</button>
                 <button class="btn-degree" data-label="B-DEGREE">Degree B</button>
                 <button class="btn-org"    data-label="B-ORGANIZATION">Org B</button>
+                <button class="btn-loc"    data-label="B-LOCATION">Location B</button>
+                <button class="btn-co"     data-label="B-COMPANY">Company B</button>
+                <button class="btn-cert"   data-label="B-CERTIFICATION">Cert B</button>
             </div>
             <div class="menu-label" style="margin-top:6px">Continue (I)</div>
             <div class="menu-grid">
@@ -149,6 +145,9 @@
                 <button class="btn-job"    data-label="I-JOB_TITLE">Job Title I</button>
                 <button class="btn-degree" data-label="I-DEGREE">Degree I</button>
                 <button class="btn-org"    data-label="I-ORGANIZATION">Org I</button>
+                <button class="btn-loc"    data-label="I-LOCATION">Location I</button>
+                <button class="btn-co"     data-label="I-COMPANY">Company I</button>
+                <button class="btn-cert"   data-label="I-CERTIFICATION">Cert I</button>
             </div>
             <div class="menu-grid" style="margin-top:6px">
                 <button class="btn-clear"  data-label="O">Clear (O)</button>

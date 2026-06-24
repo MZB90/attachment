@@ -30,6 +30,7 @@ public class breakdownCV {
     private static final Logger log = Logger.getLogger(breakdownCV.class.getName());
 
     private static final Pattern EMAIL_PATTERN = Pattern.compile("\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Z|a-z]{2,}\\b");
+    private static final boolean DEBUG = false;
     private static final Pattern PHONE_PATTERN = Pattern.compile("(?:\\+?\\d{1,3}[-.\\s]?)?(?:\\d[-.\\s]?){8,12}\\d");
     private static final Pattern PERSONAL_INFO_PATTERN = Pattern.compile("(?im)^[ \\t]*(?:name|email|phone|address|contact|mobile)[ \\t]*:[ \\t]*([^\\n]+)");
     private static final Pattern DATE_RANGE_PATTERN2 = Pattern.compile(
@@ -98,7 +99,7 @@ public class breakdownCV {
 
         System.out.println("Plain text extracted: " + cvText.substring(0, Math.min(100, cvText.length())) + "...");
 
-        debugExtraction(cvText);
+        if (DEBUG) debugExtraction(cvText);
         Map<String, List<String>> sections = extractSections(cvText);
 
         System.out.println("\n=== SECTIONS EXTRACTION RESULTS ===");
@@ -225,7 +226,7 @@ public class breakdownCV {
         for (String h : SKILLS_HEADERS)   if (lower.equals(h) || lower.startsWith(h)) return "skills";
         for (String h : REFERENCES_HEADERS) if (lower.equals(h) || lower.startsWith(h)) return "references";
 
-        System.out.println("Checking header: '" + lower + "'");
+        if (DEBUG) System.out.println("Checking header: '" + lower + "'");
         return null;
     }
 
@@ -555,6 +556,12 @@ public class breakdownCV {
                 if (em.entityType().equals("EMAIL") && !personalInfo.has("email")) {
                     personalInfo.put("email", em.text());
                 }
+                if (em.entityType().equals("LOCATION") && !personalInfo.has("location")) {
+                    personalInfo.put("location", em.text());
+                }
+                if (em.entityType().equals("COMPANY") && !personalInfo.has("current_company")) {
+                    personalInfo.put("current_company", em.text());
+                }
                 if (em.entityType().equals("PERSON") && !personalInfo.has("corenlp_name")) {
                     personalInfo.put("corenlp_name", em.text());
                     System.out.println("[CoreNLP custom] Assigned name: " + em.text());
@@ -630,19 +637,6 @@ public class breakdownCV {
     private boolean containsAny(String text, String[] keywords) {
         for (String k : keywords) if (text.contains(k)) return true;
         return false;
-    }
-
-    private boolean containsAnyIgnoreCase(String text, String[] terms) {
-        String lower = text.toLowerCase();
-        for (String t : terms) if (lower.contains(t.toLowerCase())) return true;
-        return false;
-    }
-
-    private boolean isLikelyName(String text) {
-        String[] parts = text.split("\\s+");
-        if (parts.length < 2 || parts.length > 3) return false;
-        for (String p : parts) if (p.isEmpty() || !Character.isUpperCase(p.charAt(0))) return false;
-        return true;
     }
 
     private void debugExtraction(String plainText) {
