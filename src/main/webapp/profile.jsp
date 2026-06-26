@@ -445,6 +445,106 @@
                                     </div>
                                     <!-- End: Personal Details Card -->
 
+                                    <!-- Begin: CV Upload Card -->
+                                    <div class="relative bg-gradient-to-r from-blue-50 to-blue-100 rounded-2xl shadow-sm border-2 border-blue-400 p-6 mb-6">
+                                        <!-- Header -->
+                                        <div class="flex items-center gap-3 mb-4">
+                                            <i class="fas fa-cloud-upload-alt text-2xl text-blue-600"></i>
+                                            <h3 class="text-lg font-bold text-blue-700">Upload or Update Your CV</h3>
+                                        </div>
+                                        
+                                        <!-- Description -->
+                                        <p class="text-gray-700 text-sm mb-4">
+                                            Upload your CV to automatically extract and populate your profile with Key Details.
+                                        </p>
+                                        
+                                        <!-- Upload Area -->
+                                        <div class="flex items-center gap-3 mb-4">
+                                            <input type="file" id="profileCVFile" accept=".pdf,.doc,.docx" 
+                                                class="flex-1 text-sm text-gray-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:font-medium file:bg-blue-500 file:text-white hover:file:bg-blue-600 cursor-pointer border border-blue-300 rounded-lg px-3 py-2" />
+                                            <button type="button" id="uploadCVBtn" onclick="uploadCVFromProfile()"
+                                                    class="px-6 py-2 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition whitespace-nowrap flex items-center gap-2">
+                                                <i class="fas fa-upload"></i> Upload CV
+                                            </button>
+                                        </div>
+                                        
+                                        <!-- Status Display -->
+                                        <div id="cvUploadStatus" class="hidden bg-white rounded-lg p-4 border border-blue-200">
+                                            <div id="cvUploadProgress" class="w-full bg-gray-200 rounded-full h-2 mb-3 overflow-hidden">
+                                                <div class="bg-blue-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                                            </div>
+                                            <p id="cvUploadMessage" class="text-sm text-gray-700 font-medium"></p>
+                                        </div>
+                                    </div>
+                                    <!-- End: CV Upload Card -->
+
+                                    <script>
+                                    function uploadCVFromProfile() {
+                                        const fileInput = document.getElementById('profileCVFile');
+                                        const file = fileInput.files[0];
+                                        
+                                        if (!file) {
+                                            alert('Please select a CV file (PDF, DOC, or DOCX)');
+                                            return;
+                                        }
+                                        
+                                        // Validate file type
+                                        const validTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+                                        if (!validTypes.includes(file.type)) {
+                                            alert('Please select a valid CV file (PDF, DOC, or DOCX)');
+                                            return;
+                                        }
+                                        
+                                        // Validate file size (max 10MB)
+                                        if (file.size > 10 * 1024 * 1024) {
+                                            alert('File size must be less than 10MB');
+                                            return;
+                                        }
+                                        
+                                        const formData = new FormData();
+                                        formData.append('cvFile', file);
+                                        
+                                        const statusDiv = document.getElementById('cvUploadStatus');
+                                        const messageDiv = document.getElementById('cvUploadMessage');
+                                        const progressBar = statusDiv.querySelector('.bg-blue-600');
+                                        
+                                        statusDiv.classList.remove('hidden');
+                                        messageDiv.textContent = 'Processing your CV...';
+                                        messageDiv.className = 'text-sm text-blue-700 font-medium';
+                                        progressBar.style.width = '30%';
+                                        
+                                        fetch('<%= request.getContextPath() %>/processCV', {
+                                            method: 'POST',
+                                            body: formData,
+                                            credentials: 'include'
+                                        })
+                                        .then(response => {
+                                            progressBar.style.width = '70%';
+                                            return response.json();
+                                        })
+                                        .then(data => {
+                                            progressBar.style.width = '100%';
+                                            
+                                            if (data.status === 'success' || data.data) {
+                                                messageDiv.textContent = '✓ CV processed successfully! Your profile is being updated...';
+                                                messageDiv.className = 'text-sm text-green-700 font-medium';
+
+                                                setTimeout(() => {
+                                                    window.location.reload();
+                                                }, 2000);
+                                            } else {
+                                                messageDiv.textContent = '✗ Error: ' + (data.error || 'Processing failed. Please try again.');
+                                                messageDiv.className = 'text-sm text-red-700 font-medium';
+                                                progressBar.style.width = '0%';
+                                            }
+                                        })
+                                        .catch(error => {
+                                            messageDiv.textContent = '✗ Error uploading file: ' + error.message;
+                                            messageDiv.className = 'text-sm text-red-700 font-medium';
+                                            progressBar.style.width = '0%';
+                                        });
+                                    }
+                                    </script>
 
                                     <!-- Begin: Education Section -->
                                     <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden mb-6">

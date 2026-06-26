@@ -35,8 +35,8 @@ public class SignUpServlet extends HttpServlet {
         BDB dbConn = new BDB(dbConfig);
         Connection conn = dbConn.getDB();
 
-        String sql = "INSERT INTO applicants (first_name, middle_name, surname, applicant_email, applicant_password) " +
-                     "VALUES (?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO applicants (first_name, middle_name, surname, applicant_email, applicant_password, cv_data, cv_upload_status) " +
+                     "VALUES (?, ?, ?, ?, ?, ?, ?)";
 
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, firstname.trim());
@@ -44,6 +44,8 @@ public class SignUpServlet extends HttpServlet {
             stmt.setString(3, surname.trim());
             stmt.setString(4, email);
             stmt.setString(5, password);
+            stmt.setString(6, null);  
+            stmt.setString(7, "pending");
 
             stmt.executeUpdate();
             response.sendRedirect("jbseekerlanding.jsp?success=signup_successful");

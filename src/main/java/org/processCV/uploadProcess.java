@@ -10,6 +10,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.sql.PreparedStatement;
+import java.sql.Connection;
 
 import org.baraza.DB.BDB;
 import org.baraza.DB.BQuery;
@@ -151,6 +153,8 @@ public class uploadProcess extends HttpServlet {
 
             breakdownCV parser = new breakdownCV();
             JSONObject result = parser.extractCVData(rawText);
+            System.out.println("Saving CV data to database for userID: " + userID);
+            saveCVDataToDatabase(result, userID);
 
             // Clean up temp file
             Files.deleteIfExists(tempFile);
@@ -159,18 +163,181 @@ public class uploadProcess extends HttpServlet {
             // Send JSON response with logs
             JSONObject responseObj = new JSONObject();
             responseObj.put("data", result);
+            responseObj.put("status", "success");
+            responseObj.put("message", "CV processed and saved to your profile");
             responseObj.put("logs", logBuffer.toString());
             out.print(responseObj.toString(2));
 
         } catch (Exception ex) {
             ex.printStackTrace();
+            updateCVUploadStatus(userID, "failed");
+            
             JSONObject errorResponse = new JSONObject();
             errorResponse.put("error", "Processing failed: " + ex.getMessage());
+            errorResponse.put("status", "failed");
             errorResponse.put("logs", logBuffer.toString());
             out.print(errorResponse.toString());
         } finally {
             REQUEST_LOG.remove();
             out.close();
+        }
+    }
+
+    private void saveCVDataToDatabase(JSONObject cvData, String userID) {
+        try {
+            if (userID == null || userID.equals("-1")) {
+                System.out.println("Invalid userID, cannot save CV data");
+                return;
+            }
+
+            Connection conn = db.getDB();
+            
+            // 1. Update applicants table with extracted personal info
+            String personalInfo = cvData.optJSONObject("personal_info").toString();
+            JSONObject personObj = cvData.optJSONObject("personal_info");
+            
+            String updateAppSql = "UPDATE applicants SET cv_data = ?, cv_upload_status = ?, " +
+                    "date_of_birth = ?, applicant_phone = ? WHERE entity_id = ?";
+            
+            try (PreparedStatement stmt = conn.prepareStatement(updateAppSql)) {
+                stmt.setString(1, cvData.toString(2));  // Store full JSON in cv_data column
+                stmt.setString(2, "completed");          
+                stmt.setString(3, personObj.optString("dob", ""));
+                stmt.setString(4, personObj.optString("phone", ""));
+                stmt.setString(5, userID);
+                
+                int rowsUpdated = stmt.executeUpdate();
+                System.out.println("Updated applicants table: " + rowsUpdated + " row(s)");
+            }
+            
+            // 2. Insert education records
+            JSONObject educationArray = cvData.optJSONArray("education");
+            if (educationArray != null) {
+                for (int i = 0; i < educationArray.length(); i++) {
+                    JSONObject edu = educationArray.getJSONObject(i);
+                    
+                    String eduSql = "INSERT INTO education (org_id, entity_id, education_class_id, name_of_school, " +
+                            "date_from, date_to, examination_taken, details) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+                    
+                    try (PreparedStatement stmt = conn.prepareStatement(eduSql)) {
+                        stmt.setString(1, "0");
+                        stmt.setString(2, userID);
+                        stmt.setString(3, edu.optString("edu-level", "N/A"));
+                        stmt.setString(4, edu.optString("institution", ""));
+                        stmt.setString(5, edu.optString("edu-from", ""));
+                        stmt.setString(6, edu.optString("edu-to", ""));
+                        stmt.setString(7, edu.optString("certification", ""));
+                        stmt.setString(8, "Auto-extracted from CV");
+                        
+                        stmt.executeUpdate();
+                        System.out.println("Inserted education record");
+                    }
+                }
+            }
+            
+            // 3. Insert employment records
+            JSONObject experienceArray = cvData.optJSONArray("experience");
+            if (experienceArray != null) {
+                for (int i = 0; i < experienceArray.length(); i++) {
+                    JSONObject exp = experienceArray.getJSONObject(i);
+                    
+                    String empSql = "INSERT INTO employment (org_id, entity_id, employers_name, position_held, " +
+                            "date_from, date_to, details) VALUES (?, ?, ?, ?, ?, ?, ?)";
+                    
+                    try (PreparedStatement stmt = conn.prepareStatement(empSql)) {
+                        stmt.setString(1, "0");
+                        stmt.setString(2, userID);
+                        stmt.setString(3, exp.optString("description", "").split(" - ")[0]);  
+                        stmt.setString(4, exp.optString("role", ""));
+                        stmt.setString(5, exp.optString("dates", "").split("-")[0]);  // Start date
+                        stmt.setString(6, exp.optString("dates", "").split("-").length > 1 ? 
+                                exp.optString("dates", "").split("-")[1] : "");  // End date
+                        stmt.setString(7, exp.optString("description", ""));
+                        
+                        stmt.executeUpdate();
+                        System.out.println("Inserted employment record");
+                    }
+                }
+            }
+            
+            // 4. Insert skills records
+            JSONObject skillsArray = cvData.optJSONArray("skills");
+            if (skillsArray != null) {
+                for (int i = 0; i < skillsArray.length(); i++) {
+                    Object skill = skillsArray.get(i);
+                    
+                    String skillSql = "INSERT INTO skills (org_id, entity_id, skill_type_id, skill_level_id, details) " +
+                            "VALUES (?, ?, ?, ?, ?)";
+                    
+                    try (PreparedStatement stmt = conn.prepareStatement(skillSql)) {
+                        stmt.setString(1, "0");
+                        stmt.setString(2, userID);
+                        
+                        if (skill instanceof JSONObject) {
+                            JSONObject skillObj = (JSONObject) skill;
+                            stmt.setString(3, skillObj.optString("skill", ""));
+                            stmt.setString(4, "Intermediate");  // Default 
+                            stmt.setString(5, skillObj.optString("category", "Technical"));
+                        } else {
+                            stmt.setString(3, skill.toString());
+                            stmt.setString(4, "Intermediate");
+                            stmt.setString(5, "Technical");
+                        }
+                        
+                        stmt.executeUpdate();
+                        System.out.println("Inserted skill record");
+                    }
+                }
+            }
+            
+            // 5. Insert references records
+            JSONObject referencesArray = cvData.optJSONArray("references");
+            if (referencesArray != null) {
+                for (int i = 0; i < referencesArray.length(); i++) {
+                    JSONObject ref = referencesArray.getJSONObject(i);
+                    
+                    String refSql = "INSERT INTO address (org_id, table_id, table_name, address_name, company_name, " +
+                            "email, phone_number) VALUES (?, ?, ?, ?, ?, ?, ?)";
+                    
+                    try (PreparedStatement stmt = conn.prepareStatement(refSql)) {
+                        stmt.setString(1, "0");
+                        stmt.setString(2, userID);
+                        stmt.setString(3, "referees");
+                        stmt.setString(4, ref.optString("name", ""));
+                        stmt.setString(5, ref.optString("organization", ""));
+                        stmt.setString(6, ref.optString("email", ""));
+                        stmt.setString(7, ref.optString("phone", ""));
+                        
+                        stmt.executeUpdate();
+                        System.out.println("Inserted reference record");
+                    }
+                }
+            }
+            
+            System.out.println("Successfully saved all CV data to database for userID: " + userID);
+            
+        } catch (Exception e) {
+            System.err.println("Error saving CV data to database: " + e.getMessage());
+            e.printStackTrace();
+            updateCVUploadStatus(userID, "failed");
+        }
+    }
+
+    private void updateCVUploadStatus(String userID, String status) {
+        try {
+            if (userID == null || userID.equals("-1")) return;
+            
+            Connection conn = db.getDB();
+            String updateSql = "UPDATE applicants SET cv_upload_status = ? WHERE entity_id = ?";
+            
+            try (PreparedStatement stmt = conn.prepareStatement(updateSql)) {
+                stmt.setString(1, status);
+                stmt.setString(2, userID);
+                stmt.executeUpdate();
+                System.out.println("Updated CV status to: " + status);
+            }
+        } catch (Exception e) {
+            System.err.println("Error updating CV status: " + e.getMessage());
         }
     }
 }

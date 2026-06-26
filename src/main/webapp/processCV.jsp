@@ -82,15 +82,78 @@
 
     <!-- Upload Form (Above Tabs) -->
     <div class="upload-container">
-        <form id="cvForm" enctype="multipart/form-data">
-            <div class="section">
-                <h3>Upload & Process CV</h3>
-                <input type="file" id="cvFile" name="cvFile" accept=".pdf,.doc,.docx" required />
-                <br><br>
-                <button type="button" onclick="processCV()">Process CV</button>
-            </div>
-        </form>
+        <div class="section bg-gradient-to-r from-blue-50 to-purple-50 p-6 rounded-lg border border-blue-200 mb-6">
+            <h3 class="text-xl font-bold text-blue-700 mb-4">Upload & Process CV</h3>
+            <p class="text-gray-700 mb-4">Upload your CV to extract details.
+                <span id="accountNote" class="font-semibold text-blue-600">
+                </span>
+            </p>
+            
+            <form id="cvForm" enctype="multipart/form-data" class="space-y-4">
+                <div class="space-y-2">
+                    <label for="cvFile" class="block font-semibold text-gray-700">Select CV File</label>
+                    <input type="file" id="cvFile" name="cvFile" accept=".pdf,.doc,.docx" required 
+                        class="w-full text-sm text-gray-600 file:mr-3 file:py-2 file:px-4
+                                file:rounded-lg file:border-0 file:font-medium
+                                file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 cursor-pointer" />
+                </div>
+                
+                <div class="flex gap-3">
+                    <button type="button" onclick="processCV()" 
+                            class="px-6 py-2 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition">
+                        Process CV
+                    </button>
+                    <button type="button" id="saveToProfileBtn" onclick="saveCVToProfile()" 
+                            class="px-6 py-2 rounded-lg font-semibold text-white bg-green-600 hover:bg-green-700 transition hidden">
+                        Save to My Profile
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
+
+    <script>
+    // Check if user is logged in and update UI
+    function checkLoginStatus() {
+        fetch('<%= request.getContextPath() %>/resume?fnct=getApplicant', {
+            method: 'GET',
+            credentials: 'include'
+        })
+        .then(response => response.json())
+        .then(data => {
+            const noteEl = document.getElementById('accountNote');
+            const saveBtn = document.getElementById('saveToProfileBtn');
+            
+            if (data.applicant && data.applicant.length > 0) {
+                // User is logged in
+                noteEl.textContent = '✓ Your data will automatically be saved to your profile.';
+                saveBtn.classList.add('hidden');
+            } else {
+                // User not logged in
+                noteEl.innerHTML = 'After processing, you can create an account to save this data to your profile.';
+                saveBtn.classList.remove('hidden');
+            }
+        })
+        .catch(error => {
+            console.log('User not authenticated');
+            document.getElementById('saveToProfileBtn').classList.remove('hidden');
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', checkLoginStatus);
+
+    let lastResults = null;
+
+    function saveCVToProfile() {
+        if (!lastResults) {
+            alert('No CV data to save. Please process a CV first.');
+            return;
+        }
+        
+        alert('Please create an account to save your CV data.\nRedirecting to sign up...');
+        window.location.href = '<%= request.getContextPath() %>/jbseekerlanding.jsp';
+    }
+    </script>
 
     <!-- Tabs -->
     <div class="tab-container">
