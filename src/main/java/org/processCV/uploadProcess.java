@@ -193,7 +193,6 @@ public class uploadProcess extends HttpServlet {
             Connection conn = db.getDB();
             
             // 1. Update applicants table with extracted personal info
-            String personalInfo = cvData.optJSONObject("personal_info").toString();
             JSONObject personObj = cvData.optJSONObject("personal_info");
             
             String updateAppSql = "UPDATE applicants SET cv_data = ?, cv_upload_status = ?, " +
@@ -201,9 +200,9 @@ public class uploadProcess extends HttpServlet {
             
             try (PreparedStatement stmt = conn.prepareStatement(updateAppSql)) {
                 stmt.setString(1, cvData.toString(2));  // Store full JSON in cv_data column
-                stmt.setString(2, "completed");          
-                stmt.setString(3, personObj.optString("dob", ""));
-                stmt.setString(4, personObj.optString("phone", ""));
+                stmt.setString(2, "completed");  
+                stmt.setString(3, personObj != null ? personObj.optString("dob", "") : "");
+                stmt.setString(4, personObj != null ? personObj.optString("phone", "") : "");
                 stmt.setString(5, userID);
                 
                 int rowsUpdated = stmt.executeUpdate();
@@ -211,8 +210,8 @@ public class uploadProcess extends HttpServlet {
             }
             
             // 2. Insert education records
-            JSONObject educationArray = cvData.optJSONArray("education");
-            if (educationArray != null) {
+            JSONArray educationArray = cvData.optJSONArray("education");
+            if (educationArray != null && educationArray.length() > 0) {
                 for (int i = 0; i < educationArray.length(); i++) {
                     JSONObject edu = educationArray.getJSONObject(i);
                     
@@ -236,8 +235,8 @@ public class uploadProcess extends HttpServlet {
             }
             
             // 3. Insert employment records
-            JSONObject experienceArray = cvData.optJSONArray("experience");
-            if (experienceArray != null) {
+            JSONArray experienceArray = cvData.optJSONArray("experience");
+            if (experienceArray != null && experienceArray.length() > 0) {
                 for (int i = 0; i < experienceArray.length(); i++) {
                     JSONObject exp = experienceArray.getJSONObject(i);
                     
@@ -247,12 +246,20 @@ public class uploadProcess extends HttpServlet {
                     try (PreparedStatement stmt = conn.prepareStatement(empSql)) {
                         stmt.setString(1, "0");
                         stmt.setString(2, userID);
-                        stmt.setString(3, exp.optString("description", "").split(" - ")[0]);  
+                        
+                        String description = exp.optString("description", "");
+                        String[] parts = description.split(" - ");
+                        String company = parts.length > 0 ? parts[0] : "";
+                        
+                        stmt.setString(3, company);
                         stmt.setString(4, exp.optString("role", ""));
-                        stmt.setString(5, exp.optString("dates", "").split("-")[0]);  // Start date
-                        stmt.setString(6, exp.optString("dates", "").split("-").length > 1 ? 
-                                exp.optString("dates", "").split("-")[1] : "");  // End date
-                        stmt.setString(7, exp.optString("description", ""));
+                        
+                        String dates = exp.optString("dates", "");
+                        String[] dateParts = dates.split("-");
+                        stmt.setString(5, dateParts.length > 0 ? dateParts[0].trim() : "");
+                        stmt.setString(6, dateParts.length > 1 ? dateParts[1].trim() : "");
+                        
+                        stmt.setString(7, description);
                         
                         stmt.executeUpdate();
                         System.out.println("Inserted employment record");
@@ -261,10 +268,10 @@ public class uploadProcess extends HttpServlet {
             }
             
             // 4. Insert skills records
-            JSONObject skillsArray = cvData.optJSONArray("skills");
-            if (skillsArray != null) {
+            JSONArray skillsArray = cvData.optJSONArray("skills");
+            if (skillsArray != null && skillsArray.length() > 0) {
                 for (int i = 0; i < skillsArray.length(); i++) {
-                    Object skill = skillsArray.get(i);
+                    Object skillObj = skillsArray.get(i);
                     
                     String skillSql = "INSERT INTO skills (org_id, entity_id, skill_type_id, skill_level_id, details) " +
                             "VALUES (?, ?, ?, ?, ?)";
@@ -273,13 +280,13 @@ public class uploadProcess extends HttpServlet {
                         stmt.setString(1, "0");
                         stmt.setString(2, userID);
                         
-                        if (skill instanceof JSONObject) {
-                            JSONObject skillObj = (JSONObject) skill;
-                            stmt.setString(3, skillObj.optString("skill", ""));
-                            stmt.setString(4, "Intermediate");  // Default 
-                            stmt.setString(5, skillObj.optString("category", "Technical"));
+                        if (skillObj instanceof JSONObject) {
+                            JSONObject skill = (JSONObject) skillObj;
+                            stmt.setString(3, skill.optString("skill", ""));
+                            stmt.setString(4, "Intermediate"); 
+                            stmt.setString(5, skill.optString("category", "Technical"));
                         } else {
-                            stmt.setString(3, skill.toString());
+                            stmt.setString(3, skillObj.toString());
                             stmt.setString(4, "Intermediate");
                             stmt.setString(5, "Technical");
                         }
@@ -291,8 +298,8 @@ public class uploadProcess extends HttpServlet {
             }
             
             // 5. Insert references records
-            JSONObject referencesArray = cvData.optJSONArray("references");
-            if (referencesArray != null) {
+            JSONArray referencesArray = cvData.optJSONArray("references");
+            if (referencesArray != null && referencesArray.length() > 0) {
                 for (int i = 0; i < referencesArray.length(); i++) {
                     JSONObject ref = referencesArray.getJSONObject(i);
                     
