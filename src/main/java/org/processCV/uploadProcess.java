@@ -16,6 +16,7 @@ import java.sql.Connection;
 import org.baraza.DB.BDB;
 import org.baraza.DB.BQuery;
 import org.json.JSONObject;
+import org.json.JSONArray;
 
 import jakarta.servlet.ServletConfig;
 import jakarta.servlet.ServletException;
