@@ -24,6 +24,7 @@ CREATE TABLE applicants (
 	picture_file			varchar(64),
 	cv_file					varchar(64),
 	cv_data					text,
+	cv_upload_status		varchar(20) default 'pending',
 	identity_card			varchar(50),
 	language				varchar(320),
 	bank_account			varchar(32),
