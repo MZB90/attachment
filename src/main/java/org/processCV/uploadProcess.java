@@ -24,6 +24,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.Part;
 
+import org.processCV.CVImportHelper;
+
 @MultipartConfig(fileSizeThreshold = 1024 * 1024 * 2, // 2 MB
                  maxFileSize = 1024 * 1024 * 10,      // 10 MB
                  maxRequestSize = 1024 * 1024 * 50)   // 50 MB
@@ -151,6 +153,13 @@ public class uploadProcess extends HttpServlet {
 
             breakdownCV parser = new breakdownCV();
             JSONObject result = parser.extractCVData(rawText);
+
+            // Save to profile DB if user is authenticated
+            boolean cvImported = false;
+            if (!"-1".equals(userID) && db != null && db.isValid()) {
+                cvImported = CVImportHelper.saveForLoggedInUser(db, orgId, userID, result);
+            }
+            result.put("cv_imported", cvImported);
 
             // Clean up temp file
             Files.deleteIfExists(tempFile);

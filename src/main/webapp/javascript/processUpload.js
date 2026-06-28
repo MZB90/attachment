@@ -30,6 +30,10 @@ async function processCV() {
 
         const result = data.data;
 
+        if (result.cv_imported) {
+            addLog('\n✓ Profile fields saved to your account from this CV.');
+        }
+
         // Personal Info
         const info = result.personal_info || {};
         document.getElementById('infoName').textContent = info.name || '—';
